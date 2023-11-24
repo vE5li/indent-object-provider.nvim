@@ -8,10 +8,6 @@ local function in_indent(start_line, around)
     local first_line = start_line
     local first_non_empty_line = start_line
     for i = start_line, 0, -1 do
-        if cur_indent == 0 and #vim.fn.getline(i) == 0 then
-            -- If we are at column zero, we will stop at an empty line.
-            break
-        end
         if #vim.fn.getline(i) ~= 0 then
             local indent = vim.fn.indent(i)
             if indent < cur_indent then
@@ -25,9 +21,6 @@ local function in_indent(start_line, around)
     local last_line = start_line
     local last_non_empty_line = start_line
     for i = start_line, total_lines, 1 do
-        if cur_indent == 0 and #vim.fn.getline(i) == 0 then
-            break
-        end
         if #vim.fn.getline(i) ~= 0 then
             local indent = vim.fn.indent(i)
             if indent < cur_indent then
@@ -104,11 +97,6 @@ local function collect_objects(indent, first_line, total_lines, objects)
     while i <= total_lines do
         local line_length = #vim.fn.getline(i)
 
-        -- On the root scope, any empty line will terminate the object
-        if line_length == 0 and indent == 0 then
-            return insert(i)
-        end
-
         if line_length > 0 then
             local next_indent = vim.fn.indent(i)
 
@@ -128,18 +116,9 @@ end
 local function every_indent(around)
     local total_lines = vim.api.nvim_buf_line_count(0)
     local objects = {}
-    local i = 0
 
-    while i <= total_lines do
-        local line_length = #vim.fn.getline(i)
-
-        if line_length > 0 then
-            local indentation = vim.fn.indent(i)
-            i = collect_objects(indentation, i, total_lines, objects)
-        end
-
-        i = i + 1
-    end
+    local indentation = vim.fn.indent(1)
+    collect_objects(indentation, 1, total_lines, objects)
 
     return objects
 end
