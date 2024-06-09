@@ -7,28 +7,28 @@ local function in_indent(start_line, around)
 
     local first_line = start_line
     local first_non_empty_line = start_line
-    for i = start_line, 0, -1 do
-        if #vim.fn.getline(i) ~= 0 then
-            local indent = vim.fn.indent(i)
+    for index = start_line, 1, -1 do
+        if #vim.fn.getline(index) ~= 0 then
+            local indent = vim.fn.indent(index)
             if indent < cur_indent then
                 break
             end
-            first_non_empty_line = i
+            first_non_empty_line = index
         end
-        first_line = i
+        first_line = index
     end
 
     local last_line = start_line
     local last_non_empty_line = start_line
-    for i = start_line, total_lines, 1 do
-        if #vim.fn.getline(i) ~= 0 then
-            local indent = vim.fn.indent(i)
+    for index = start_line, total_lines, 1 do
+        if #vim.fn.getline(index) ~= 0 then
+            local indent = vim.fn.indent(index)
             if indent < cur_indent then
                 break
             end
-            last_non_empty_line = i
+            last_non_empty_line = index
         end
-        last_line = i
+        last_line = index
     end
 
     if not around then
@@ -50,11 +50,11 @@ local function find_next_indent()
     local cur_indent = vim.fn.indent(start_line)
     local total_lines = vim.api.nvim_buf_line_count(0)
 
-    for i = start_line, total_lines, 1 do
-        if #vim.fn.getline(i) ~= 0 then
-            local indent = vim.fn.indent(i)
+    for index = start_line, total_lines, 1 do
+        if #vim.fn.getline(index) ~= 0 then
+            local indent = vim.fn.indent(index)
             if indent ~= cur_indent then
-                return i
+                return index
             end
         end
     end
@@ -66,11 +66,11 @@ local function find_last_indent()
     local start_line = vim.api.nvim_win_get_cursor(0)[1]
     local cur_indent = vim.fn.indent(start_line)
 
-    for i = start_line, 0, -1 do
-        if #vim.fn.getline(i) ~= 0 then
-            local indent = vim.fn.indent(i)
+    for index = start_line, 1, -1 do
+        if #vim.fn.getline(index) ~= 0 then
+            local indent = vim.fn.indent(index)
             if indent ~= cur_indent then
-                return i
+                return index
             end
         end
     end
@@ -79,7 +79,7 @@ local function find_last_indent()
 end
 
 local function collect_objects(indent, first_line, total_lines, objects)
-    local i = first_line + 1
+    local index = first_line + 1
 
     local function insert(last_line)
         local line_length = #vim.fn.getline(last_line - 1)
@@ -94,23 +94,23 @@ local function collect_objects(indent, first_line, total_lines, objects)
         return last_line - 1
     end
 
-    while i <= total_lines do
-        local line_length = #vim.fn.getline(i)
+    while index <= total_lines do
+        local line_length = #vim.fn.getline(index)
 
         if line_length > 0 then
-            local next_indent = vim.fn.indent(i)
+            local next_indent = vim.fn.indent(index)
 
             if next_indent < indent then
-                return insert(i)
+                return insert(index)
             elseif next_indent > indent then
-                i = collect_objects(next_indent, i, total_lines, objects)
+                index = collect_objects(next_indent, index, total_lines, objects)
             end
         end
 
-        i = i + 1
+        index = index + 1
     end
 
-    return insert(i)
+    return insert(index)
 end
 
 local function every_indent(around)
