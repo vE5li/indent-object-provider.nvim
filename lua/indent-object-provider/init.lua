@@ -130,7 +130,7 @@ local bindings = {
         key = "i",
         visual_mode = "linewise",
         callback = function(mode, requested)
-            if requested == "cursor" then
+            if requested == "closest" then
                 local cur_line = vim.api.nvim_win_get_cursor(0)[1]
                 return in_indent(cur_line, mode == "a")
             elseif requested == "next" then
