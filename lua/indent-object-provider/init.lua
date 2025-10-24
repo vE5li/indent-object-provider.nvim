@@ -78,21 +78,24 @@ local function find_last_indent()
     return 0
 end
 
-local function collect_objects(indent, first_line, total_lines, objects)
+local function collect_objects(indent, first_line, total_lines, objects, around)
     local index = first_line + 1
 
     local function insert(last_line)
+        local minimum_indent = #vim.fn.getline(first_line)
         local line_length = #vim.fn.getline(last_line - 1)
 
         table.insert(objects, {
             first_line = first_line,
-            start_column = indent + 1,
+            start_column = math.min(indent + 1, minimum_indent),
             last_line = last_line - 1,
             end_column = line_length,
         })
 
         return last_line - 1
     end
+
+    local empty_line_count = 0
 
     while index <= total_lines do
         local line_length = #vim.fn.getline(index)
@@ -101,10 +104,23 @@ local function collect_objects(indent, first_line, total_lines, objects)
             local next_indent = vim.fn.indent(index)
 
             if next_indent < indent then
-                return insert(index)
+                local last_line = index
+                if not around then
+                    last_line = last_line - empty_line_count
+                end
+
+                return insert(last_line)
             elseif next_indent > indent then
-                index = collect_objects(next_indent, index, total_lines, objects)
+                if around then
+                    index = index - empty_line_count
+                end
+
+                index = collect_objects(next_indent, index, total_lines, objects, around)
             end
+
+            empty_line_count = 0
+        else
+            empty_line_count = empty_line_count + 1
         end
 
         index = index + 1
@@ -118,7 +134,7 @@ local function every_indent(around)
     local objects = {}
 
     local indentation = vim.fn.indent(1)
-    collect_objects(indentation, 1, total_lines, objects)
+    collect_objects(indentation, 1, total_lines, objects, around)
 
     return objects
 end
@@ -146,7 +162,7 @@ local bindings = {
     },
 }
 
-M.setup = function( --[[ config ]])
+M.setup = function()
     for _, binding in ipairs(bindings) do
         require("unified-text-objects").register_binding(binding)
     end
